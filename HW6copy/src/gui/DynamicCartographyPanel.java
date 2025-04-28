@@ -1,0 +1,335 @@
+package gui;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ExecutionException;
+
+import feature.Street;
+import feature.StreetSegment;
+import geography.MapProjection;
+import gps.GPGGASentence;
+import gps.GPSObserver;
+import graph.StreetNetwork;
+import grid.Grid;
+import grid.GridTuple;
+import matching.MapMatchingFactory;
+
+/**
+ * Dynamic screen to allow for movement on gps screen.
+ * @param <T> The type of the data
+ * @author Jerome Donfack
+ *
+ */
+public class DynamicCartographyPanel<T> extends CartographyPanel<T> 
+    implements GPSObserver, PropertyChangeListener
+{
+  private static final long serialVersionUID = 1L;
+  
+  private GPGGASentence gpgga;
+  private MapProjection proj;
+  private Grid grid;
+  private ArrayList<Path2D.Double> gridLines;
+  private Map<String, Street> streets;
+  private Queue<Point2D.Double> inertia;
+  private Map<String, Map<String, T>> allPaths;
+  private Map<String, T> path;
+  private int intertiaReset;
+  private int reCalcReset;
+  
+  /**
+   * Creates new DynamicCartographyPanel.
+   * @param model - Model to use for orginizing information.
+   * @param cartographer - Cartographer used to make the conversion calculations.
+   * @param grid - Grid that has all related street segments.
+   * @param proj - Projection used.
+   */
+  public DynamicCartographyPanel(final CartographyDocument<T> model, 
+      final Cartographer<T> cartographer, final MapProjection proj, 
+      final Grid grid, final Map<String, Street> streets,
+      Map<String, Map<String, T>> allPaths,
+      final Map<String, T> path)
+  {
+    super(model, cartographer);
+    this.proj = proj;
+    this.grid = grid;
+    this.gridLines = new ArrayList<>();
+    this.inertia = new LinkedList<>();
+    this.allPaths = allPaths;
+    this.path = path;
+    this.intertiaReset = 0;
+    this.reCalcReset = 0;
+    createGridLines();
+  }
+  
+  @Override
+  public void propertyChange(PropertyChangeEvent evt) 
+  {
+      if ("path".equals(evt.getPropertyName())) 
+      {
+          this.path = (Map<String, T>) evt.getNewValue();
+          System.out.println("IN HERE FOUND PATH");
+          repaint();
+      }
+  }
+  
+  private void createGridLines() 
+  {
+    for(GridTuple<Double, Double> gridCell : this.grid.getGrid().keySet())
+    {
+      
+      double widthStep = this.grid.getBounds().getWidth() / 100;
+      double heightStep = this.grid.getBounds().getHeight() / 100;
+      double startX = this.grid.getBounds().getMinX();
+      double startY = this.grid.getBounds().getMinY();
+      
+      double tLX = gridCell.getLeft() * widthStep + startX;
+      double tLY = gridCell.getRight() * heightStep + startY;
+      double bRX = tLX + widthStep;
+      double bRY = tLY + heightStep;
+      
+      Path2D.Double topLine = new Path2D.Double();
+      Path2D.Double bottomLine = new Path2D.Double();
+      Path2D.Double leftLine = new Path2D.Double();
+      Path2D.Double rightLine = new Path2D.Double();
+      
+      topLine.moveTo(tLX, tLY);
+      topLine.lineTo(bRX, tLY);
+      
+      bottomLine.moveTo(tLX, bRY);
+      bottomLine.lineTo(bRX, bRY);
+      
+      leftLine.moveTo(tLX, tLY);
+      leftLine.lineTo(tLX, bRY);
+      
+      rightLine.moveTo(bRX, tLY);
+      rightLine.lineTo(bRX, bRY);
+      
+      this.gridLines.add(rightLine);
+      this.gridLines.add(leftLine);
+      this.gridLines.add(bottomLine);
+      this.gridLines.add(topLine);
+    }
+    
+  }
+
+  @Override
+  public void handleGPSData(final String sentence)
+  {
+    this.gpgga = GPGGASentence.parseGPGGA(sentence);
+    repaint();
+  }
+  
+  /**
+   * Render the items on the screen.
+   * @param g - Graphics to use for rendering.
+   */
+  public void paint(final Graphics g)
+  {
+    if (this.gpgga == null) 
+    {
+      return;
+    }
+    double latitude = this.gpgga.getLatitude();
+    double longitude = this.gpgga.getLongitude();
+    
+    if (Double.isNaN(latitude) || Double.isNaN(longitude)) 
+    {
+      return;
+    }
+    
+    double[] projections = this.proj.forward(new double[] {longitude, latitude});
+    double projLong = projections[0];
+    double projLat = projections[1];
+    double left = projLong - 1;
+    double top = projLat - 1;
+    
+//    System.out.println(allPaths);
+    
+    HashSet<HashSet<StreetSegment>> surroundingSegs = grid.getSurroundingItems(projLat, projLong);
+    
+//    for(HashSet<StreetSegment> segs : surroundingSegs)
+//    {
+//      for(StreetSegment seg : segs)
+//      {
+//        seg.highlighted = true;
+//      }
+//    }
+    
+    Rectangle2D.Double zoomedBounds = new Rectangle2D.Double(left, top, 2, 2);
+    this.zoomStack.add(0, zoomedBounds);
+//    super.paint(g);
+    
+    for(HashSet<StreetSegment> segs : surroundingSegs)
+    {
+      for(StreetSegment seg : segs)
+      {
+        seg.highlighted = false;
+      }
+    }
+    
+    Graphics2D g2 = (Graphics2D) g;
+    Rectangle screenBounds = g2.getClipBounds();
+    Rectangle2D.Double bounds = this.zoomStack.getFirst();
+    AffineTransform at = displayTransform.getTransform(screenBounds, bounds);
+    
+    Point2D.Double modelPoint = new Point2D.Double(projLong, projLat);
+    
+    ArrayList<MapMatchingFactory> factories = new ArrayList<>();
+    for(HashSet<StreetSegment> segGrid : surroundingSegs)
+    {
+      MapMatchingFactory worker = new MapMatchingFactory(segGrid, modelPoint, this.inertia);
+      factories.add(worker);
+      worker.execute();
+    }
+    double minDistance = Double.POSITIVE_INFINITY;
+    Point2D.Double newPoint = null;
+    StreetSegment bestSeg = null;
+    
+    
+    for(MapMatchingFactory worker : factories)
+    {
+      try
+      {
+        GridTuple<GridTuple<Double, 
+        Point2D.Double>, StreetSegment> minDisCloseSeg = worker.get();
+        if(minDisCloseSeg != null && minDisCloseSeg.getLeft().getLeft() < minDistance)
+        {
+          minDistance = minDisCloseSeg.getLeft().getLeft();
+          newPoint = minDisCloseSeg.getLeft().getRight();
+          bestSeg = minDisCloseSeg.getRight();
+        }
+      }
+      catch (InterruptedException e)
+      {
+        e.printStackTrace();
+      }
+      catch (ExecutionException e)
+      {
+        e.printStackTrace();
+      }
+    }
+    if(path != null)
+    {
+      if(path.keySet().contains(bestSeg.getID()))
+      {
+        this.reCalcReset = 0;
+      }
+      else
+      {
+        this.reCalcReset += 1;
+      }
+      System.out.println(this.reCalcReset);
+      if(this.reCalcReset == 40)
+      {
+        System.out.println("new route");
+        this.path = this.allPaths.get(bestSeg.getID());
+        System.out.println(this.allPaths.get(bestSeg.getID()));
+        System.out.println(bestSeg.getID());
+        this.reCalcReset = 0;
+      }
+    }
+    else
+    {
+      if(!this.allPaths.isEmpty() && this.path == null)
+      {
+        this.path = this.allPaths.get(bestSeg.getID());
+        System.out.println("finding another path");
+      }
+      this.reCalcReset = 0;
+    }
+    
+    if(this.path != null)
+    {
+      this.model.setHighlighted(this.path);
+    }
+    
+    super.paint(g);
+    
+    for(Point2D.Double iPoint : this.inertia)
+    {
+      Point2D screenIPoint = at.transform(iPoint, null);
+      
+      int radius1 = 4;
+      int diameter1 = radius1 * 2;
+      g2.setColor(Color.BLACK);
+      g2.fillOval((int)(screenIPoint.getX() - radius1), 
+          (int)(screenIPoint.getY() - radius1), diameter1, diameter1);
+    }
+    if(this.intertiaReset == 0)
+    {
+      this.inertia.offer(modelPoint);
+    }
+    this.intertiaReset = (this.intertiaReset + 1) % 6;
+    
+    if(this.inertia.size() > 2)
+    {
+      this.inertia.poll();
+    }
+    
+    bestSeg.highlighted = true;
+//    for(HashSet<StreetSegment> segs : surroundingSegs)
+//    {
+//      for(StreetSegment seg : segs)
+//      {
+//        seg.highlighted = true;
+//      }
+//    }
+//    super.paint(g);
+    
+//    for(HashSet<StreetSegment> segs : surroundingSegs)
+//    {
+//      for(StreetSegment seg : segs)
+//      {
+//        seg.highlighted = false;
+//      }
+//    }
+    bestSeg.highlighted = false;
+    
+    
+//    System.out.println("-------------------");
+//    System.out.println(minDistance);
+//    System.out.println(closestSegment);
+//    System.out.println(streets.get(closestSegment.getparentCanonicalName()));
+//    System.out.println("-------------------");
+    
+    Point2D screenPoint1 = at.transform(modelPoint, null);
+    
+    int radius1 = 4;
+    int diameter1 = radius1 * 2;
+    g2.setColor(Color.BLUE);
+    g2.fillOval((int)(screenPoint1.getX() - radius1), 
+        (int)(screenPoint1.getY() - radius1), diameter1, diameter1);
+    
+    if(newPoint != null)
+    {
+      modelPoint = newPoint;
+    }
+    
+    
+    Point2D screenPoint = at.transform(modelPoint, null);
+    
+    int radius = 4;
+    int diameter = radius * 2;
+    g2.setColor(Color.RED);
+    g2.fillOval((int)(screenPoint.getX() - radius), 
+        (int)(screenPoint.getY() - radius), diameter, diameter);
+    
+    for(Path2D.Double path : this.gridLines)
+    {
+      g2.draw(at.createTransformedShape(path));
+    }
+  }
+}
