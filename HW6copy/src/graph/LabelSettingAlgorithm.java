@@ -1,6 +1,5 @@
 package graph;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import feature.Intersection;
@@ -47,23 +46,22 @@ public class LabelSettingAlgorithm extends AbstractShortestPathAlgorithm
         labels.adjustHeadValue(segment);
       }
       workingNode = labels.getSmallestLabel();
-//      labels.makePermanent(workingNode.getID());
     }
     
-//    Map<String, Map<String, StreetSegment>> allPathsPros = new HashMap<>();
     for(Label curNode : labels.getAllLabels())
     {
       if(curNode.getPredecessor() != null)
       {
-        String startSeg = curNode.getPredecessor().getID();
+        String startSegID = curNode.getPredecessor().getID();
+        Label curLabel = curNode;
         Map<String, StreetSegment> path = new LinkedHashMap<>();
-        while(curNode.getPredecessor() != null)
+        while(curLabel.getPredecessor() != null)
         {
-          StreetSegment segment = curNode.getPredecessor();
+          StreetSegment segment = curLabel.getPredecessor();
           path.put(segment.getID(), segment);
-          curNode = labels.getLabel(segment.getTail());
+          curLabel = labels.getLabel(segment.getTail());
         }
-        allPaths.put(startSeg, path);
+        allPaths.put(startSegID, path);
       }
     }
     

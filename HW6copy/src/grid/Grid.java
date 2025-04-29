@@ -1,6 +1,5 @@
 package grid;
 
-import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
@@ -8,10 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import org.locationtech.jts.geom.*;
-import org.locationtech.jts.io.WKTReader;
-
 import feature.StreetSegment;
-import geography.PiecewiseLinearCurve;
 
 /**
  * Grid of the drawn items.
@@ -20,15 +16,11 @@ import geography.PiecewiseLinearCurve;
  */
 public class Grid
 {
-//  private HashMap<GridTuple<GridTuple<Double,Double>, 
-//    GridTuple<Double,Double>>, HashSet<StreetSegment>> grid;
-//  private HashMap<GridTuple<GridTuple<Double, Double>, 
-//    GridTuple<Double,Double>>, ArrayList<LineString>> gridLines;
   private HashMap<GridTuple<Double, Double>, HashSet<StreetSegment>> grid;
   private HashMap<GridTuple<Double, Double>, ArrayList<LineString>> gridLines;
   private Rectangle2D.Double bounds;
   private HashMap<String, StreetSegment> elementMap;
-  GeometryFactory geometryFactory;
+  private GeometryFactory geometryFactory;
   
   /**
    * Creates new grid.
@@ -39,7 +31,7 @@ public class Grid
   }
   
   /**
-   * Creates new grid.
+   * Creates new grid with elements to map and bounds to follow.
    * @param elementMap - Items to store in grid.
    * @param bounds - Bounds of items.
    */
@@ -53,6 +45,10 @@ public class Grid
     this.populateGrid();
   }
   
+  /**
+   * Return corresponding grid.
+   * @return - The grid returned.
+   */
   public HashMap<GridTuple<Double, Double>, HashSet<StreetSegment>> getGrid()
   {
     return this.grid;
@@ -67,6 +63,10 @@ public class Grid
     this.bounds = bounds;
   }
   
+  /**
+   * Get bounds of the grid.
+   * @return - Bounds of grid.
+   */
   public Rectangle2D.Double getBounds()
   {
     return this.bounds;
@@ -82,10 +82,10 @@ public class Grid
   }
   
   /**
-   * Gets targeted grid, and the 5x5 grid surrounding the targeted grid
+   * Gets targeted grid, and the 3x3 grid surrounding the targeted grid.
    * @param lat - Latitude.
    * @param lon - Longitude.
-   * @return
+   * @return - Surrounding segments in the 3x3 grid.
    */
   public HashSet<HashSet<StreetSegment>> getSurroundingItems(final double lat,
       final double lon)
@@ -113,10 +113,6 @@ public class Grid
           {
             surroundingItems.add(this.grid.get(coords));
           }
-        }
-        else
-        {
-          System.out.println("null" + w + " " + h);
         }
       }
     }
@@ -172,54 +168,6 @@ public class Grid
       boundaries.add(rightLine);
       this.gridLines.put(boundCoords, boundaries);
     }
-    
-//    for(double h = bounds.getMinY(); h < bounds.getMaxY(); h+=heightStep)
-//    {
-//      for(double w = bounds.getMinX(); w < bounds.getMaxX(); w+=widthStep)
-//      {
-//        double tLX = w;
-//        double tLY = h;
-//        double bRX = w + widthStep;
-//        double bRY = h + heightStep;
-//        GridTuple<Double, Double> topLeft = new GridTuple<>(tLX, tLY);
-//        GridTuple<Double, Double> bottomRight = new GridTuple<>(bRX, bRY);
-//        GridTuple<GridTuple<Double, Double>, 
-//          GridTuple<Double, Double>> coords = new GridTuple<>(topLeft, bottomRight);
-//        grid.put(coords, new HashSet<>());
-//      }
-//    }
-//    for(GridTuple<GridTuple<Double, Double>, 
-//        GridTuple<Double, Double>> boundCoords: this.grid.keySet())
-//    {
-//      GridTuple<Double, Double> topLeft = boundCoords.getLeft();
-//      GridTuple<Double, Double> bottomRight = boundCoords.getRight();
-//      double tLX = topLeft.getLeft();
-//      double tLY = topLeft.getRight();
-//      double bRX = bottomRight.getLeft();
-//      double bRY = bottomRight.getRight();
-//      
-//      Coordinate[] topLineCoords = new Coordinate[]
-//          {new Coordinate(tLX, tLY), new Coordinate(bRX, tLY)};
-//      Coordinate[] bottomLineCoords = new Coordinate[]
-//          {new Coordinate(tLX, bRY), new Coordinate(bRX, bRY)};
-//      Coordinate[] leftLineCoords = new Coordinate[]
-//          {new Coordinate(tLX, tLY), new Coordinate(tLX, bRY)};
-//      Coordinate[] rightLineCoords = new Coordinate[]
-//          {new Coordinate(bRX, tLY), new Coordinate(bRX, bRY)};
-//      
-//      
-//      LineString topLine = geometryFactory.createLineString(topLineCoords);
-//      LineString bottomLine = geometryFactory.createLineString(bottomLineCoords);
-//      LineString leftLine = geometryFactory.createLineString(leftLineCoords);
-//      LineString rightLine = geometryFactory.createLineString(rightLineCoords);
-//      ArrayList<LineString> boundaries = new ArrayList<>();
-//      
-//      boundaries.add(topLine);
-//      boundaries.add(bottomLine);
-//      boundaries.add(leftLine);
-//      boundaries.add(rightLine);
-//      this.gridLines.put(boundCoords, boundaries);
-//    }
   }
   
   /**
@@ -250,15 +198,6 @@ public class Grid
         double tLY = boundCoords.getRight() * heightStep + startY;
         double bRX = tLX + widthStep;
         double bRY = tLY + heightStep;
-        
-//        System.out.println("HeadX: " + headPoint.getX());
-//        System.out.println("HeadY: " + headPoint.getY());
-//        System.out.println("tLX: " + tLX);
-//        System.out.println("tLY: " + tLY);
-//        System.out.println("bRX: " + bRX);
-//        System.out.println("bRY: " + bRY);
-//        System.out.println("TailX: " + tailPoint.getX());
-//        System.out.println("TailY: " + tailPoint.getY());
         
         if(headPoint.getX() >= tLX && headPoint.getX() <= bRX 
             && headPoint.getY() >= tLY && headPoint.getY() <= bRY)

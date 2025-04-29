@@ -20,12 +20,9 @@ public class StreetSegment extends AbstractFeature
   private int lowAddress;
   private GeographicShape geoGraphicShape;
   private String code;
-  private double headAngle;
-  private double tailAngle;
   private Point2D.Double headPoint;
   private Point2D.Double tailPoint;
   private String parentCanonicalName;
-  public boolean highlighted = false;
   
   /**
    * Creates a street segment.
@@ -37,6 +34,7 @@ public class StreetSegment extends AbstractFeature
    * @param tail - End of the street.
    * @param head - Start of the street.
    * @param length - Length of the street.
+   * @param parentCanonicalName - Canonical name of the street segment.
    */
   public StreetSegment(final String id, final String code, final GeographicShape shape,
       final int lowAddress, final int highAddress, final int tail, final int head,
@@ -174,75 +172,4 @@ public class StreetSegment extends AbstractFeature
     }
     this.tailPoint =  tailPoint;
   }
-  
-//  /**
-//   * Inits tail angle value.
-//   */
-//  public void initTailAngle()
-//  {
-//    Point2D.Double tailPoint = this.getTailPoint();
-//    Point2D.Double headPoint = this.getHeadPoint();
-//    
-//    double transX = headPoint.getX();
-//    double transY = headPoint.getY();
-//    
-//    double transTailX = tailPoint.getX() - transX;
-//    double transTailY = tailPoint.getY() - transY;
-//    
-//    double degrees = Math.toDegrees(Math.atan2(transTailY, transTailX));
-//    
-//    if(degrees < 0)
-//    {
-//      this.tailAngle = degrees + 360;
-//    }
-//    else
-//    {
-//      this.tailAngle = degrees;
-//    }
-//    
-//  }
-//  
-//  /**
-//   * Inits head angle value.
-//   */
-//  public void initHeadAngle()
-//  {
-//    Point2D.Double tailPoint = this.getTailPoint();
-//    Point2D.Double headPoint = this.getHeadPoint();
-//    
-//    double transX = tailPoint.getX();
-//    double transY = tailPoint.getY();
-//    
-//    double transHeadX = headPoint.getX() - transX;
-//    double transHeadY = headPoint.getY() - transY;
-//    
-//    double degrees = Math.toDegrees(Math.atan2(transHeadY, transHeadX));
-//    
-//    if(degrees < 0)
-//    {
-//      this.headAngle = degrees + 360;
-//    }
-//    else
-//    {
-//      this.headAngle = degrees;
-//    }
-//  }
-//  
-//  /**
-//   * Grab head angle.
-//   * @return - Head angle.
-//   */
-//  public double getHeadAngle()
-//  {
-//    return this.headAngle;
-//  }
-//  
-//  /**
-//   * Grabs tail angle.
-//   * @return - Tail angle.
-//   */
-//  public double getTailAngle()
-//  {
-//    return this.tailAngle;
-//  }
 }

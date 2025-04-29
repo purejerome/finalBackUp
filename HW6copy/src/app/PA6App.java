@@ -20,9 +20,9 @@ import dataprocessing.Geocoder;
 
 import feature.*;
 import gps.*;
-import graph.CandidateLabelList;
-import graph.CandidateLabelManager;
-import graph.LabelCorrectingAlgorithm;
+//import graph.CandidateLabelList;
+//import graph.CandidateLabelManager;
+//import graph.LabelCorrectingAlgorithm;
 import graph.LabelSettingAlgorithm;
 import graph.PathFindingWorker;
 import graph.PermanentLabelBuckets;
@@ -38,7 +38,7 @@ import grid.Grid;
  * @version 1.0
  */
 public class PA6App implements ActionListener, Runnable, 
-StreetSegmentObserver, PropertyChangeListener
+    StreetSegmentObserver, PropertyChangeListener
 {
   private static final int SET_DESTINATION = 0;
   private static final int SET_ORIGIN = 1;
@@ -48,6 +48,7 @@ StreetSegmentObserver, PropertyChangeListener
   private static final String EXIT = "Exit";
   private static final String DESTINATION = "Destination";
   private static final String ORIGIN = "Origin";
+  private static final String PATH = "path";
   
   private static final String TAB = "\t";
   
@@ -64,12 +65,19 @@ StreetSegmentObserver, PropertyChangeListener
   private Map<String, StreetSegment> path;
   private PropertyChangeSupport pcs;
 
+  /**
+   * Creates new app.
+   */
   public PA6App() 
   {
     pcs = new PropertyChangeSupport(this);
   }
   
-  public void addPropertyChangeListener(PropertyChangeListener listener)
+  /**
+   * Adds a property listener.
+   * @param listener - Prop listner to add.
+   */
+  public void addPropertyChangeListener(final PropertyChangeListener listener)
   {
     pcs.addPropertyChangeListener(listener);
   }
@@ -106,7 +114,8 @@ StreetSegmentObserver, PropertyChangeListener
       alg = new LabelSettingAlgorithm(labels);
       
       // TODO CONSTRUCT THE ALGORITHM   --   Use a LabelCorrecting Algorithm
-//      CandidateLabelManager labels = new CandidateLabelList(CandidateLabelList.NEWEST, network.size()); 
+//      CandidateLabelManager labels = new CandidateLabelList(CandidateLabelList.NEWEST, 
+//          network.size()); 
 //      alg = new LabelCorrectingAlgorithm(labels);
 
       // Construct the SwingWorker
@@ -115,9 +124,9 @@ StreetSegmentObserver, PropertyChangeListener
           originSegment.getHead(), destinationSegment.getHead(), network, 
           document, panel, allPaths);
       task.addPropertyChangeListener(this);
-      task.shouldShowIntermediateResults(true); // TODO SET TO true IF YOU WANT TO SEE INTERMEDIATE RESULTS
+      task.shouldShowIntermediateResults(true);
       pcs.addPropertyChangeListener(panel);
-      pcs.firePropertyChange("path", null, null);
+      pcs.firePropertyChange(PATH, null, null);
       dialog.setVisible(false);
 
       // Construct the dialog box
@@ -156,7 +165,7 @@ StreetSegmentObserver, PropertyChangeListener
         {
           this.path = task.get();
           document.setHighlighted(path);
-          pcs.firePropertyChange("path", null, this.path);
+          pcs.firePropertyChange(PATH, null, this.path);
           panel.repaint();
           task = null;
         }
@@ -195,7 +204,7 @@ StreetSegmentObserver, PropertyChangeListener
       System.out.println("Read the .str file");
 
       panel = new DynamicCartographyPanel<StreetSegment>(document, 
-          new StreetSegmentCartographer(), proj, grid, streets, allPaths, this.path);
+          new StreetSegmentCartographer(), proj, grid, allPaths, this.path);
       frame = new JFrame("Map");
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       frame.setSize(600, 600);

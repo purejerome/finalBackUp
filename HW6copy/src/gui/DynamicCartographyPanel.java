@@ -17,12 +17,10 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
-import feature.Street;
 import feature.StreetSegment;
 import geography.MapProjection;
 import gps.GPGGASentence;
 import gps.GPSObserver;
-import graph.StreetNetwork;
 import grid.Grid;
 import grid.GridTuple;
 import matching.MapMatchingFactory;
@@ -42,7 +40,6 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
   private MapProjection proj;
   private Grid grid;
   private ArrayList<Path2D.Double> gridLines;
-  private Map<String, Street> streets;
   private Queue<Point2D.Double> inertia;
   private Map<String, Map<String, T>> allPaths;
   private Map<String, T> path;
@@ -53,13 +50,14 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
    * Creates new DynamicCartographyPanel.
    * @param model - Model to use for orginizing information.
    * @param cartographer - Cartographer used to make the conversion calculations.
-   * @param grid - Grid that has all related street segments.
    * @param proj - Projection used.
+   * @param grid - Grid that has all related street segments.
+   * @param allPaths - All paths to dest.
+   * @param path - Current path following to dest.
    */
   public DynamicCartographyPanel(final CartographyDocument<T> model, 
       final Cartographer<T> cartographer, final MapProjection proj, 
-      final Grid grid, final Map<String, Street> streets,
-      Map<String, Map<String, T>> allPaths,
+      final Grid grid, final Map<String, Map<String, T>> allPaths,
       final Map<String, T> path)
   {
     super(model, cartographer);
@@ -75,14 +73,13 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
   }
   
   @Override
-  public void propertyChange(PropertyChangeEvent evt) 
+  public void propertyChange(final PropertyChangeEvent evt) 
   {
-      if ("path".equals(evt.getPropertyName())) 
-      {
-          this.path = (Map<String, T>) evt.getNewValue();
-          System.out.println("IN HERE FOUND PATH");
-          repaint();
-      }
+    if ("path".equals(evt.getPropertyName())) 
+    {
+      this.path = (Map<String, T>) evt.getNewValue();
+      repaint();
+    }
   }
   
   private void createGridLines() 
@@ -156,29 +153,11 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
     double left = projLong - 1;
     double top = projLat - 1;
     
-//    System.out.println(allPaths);
-    
     HashSet<HashSet<StreetSegment>> surroundingSegs = grid.getSurroundingItems(projLat, projLong);
     
-//    for(HashSet<StreetSegment> segs : surroundingSegs)
-//    {
-//      for(StreetSegment seg : segs)
-//      {
-//        seg.highlighted = true;
-//      }
-//    }
     
     Rectangle2D.Double zoomedBounds = new Rectangle2D.Double(left, top, 2, 2);
     this.zoomStack.add(0, zoomedBounds);
-//    super.paint(g);
-    
-    for(HashSet<StreetSegment> segs : surroundingSegs)
-    {
-      for(StreetSegment seg : segs)
-      {
-        seg.highlighted = false;
-      }
-    }
     
     Graphics2D g2 = (Graphics2D) g;
     Rectangle screenBounds = g2.getClipBounds();
@@ -204,7 +183,7 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
       try
       {
         GridTuple<GridTuple<Double, 
-        Point2D.Double>, StreetSegment> minDisCloseSeg = worker.get();
+            Point2D.Double>, StreetSegment> minDisCloseSeg = worker.get();
         if(minDisCloseSeg != null && minDisCloseSeg.getLeft().getLeft() < minDistance)
         {
           minDistance = minDisCloseSeg.getLeft().getLeft();
@@ -231,13 +210,9 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
       {
         this.reCalcReset += 1;
       }
-      System.out.println(this.reCalcReset);
       if(this.reCalcReset == 40)
       {
-        System.out.println("new route");
         this.path = this.allPaths.get(bestSeg.getID());
-        System.out.println(this.allPaths.get(bestSeg.getID()));
-        System.out.println(bestSeg.getID());
         this.reCalcReset = 0;
       }
     }
@@ -246,7 +221,6 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
       if(!this.allPaths.isEmpty() && this.path == null)
       {
         this.path = this.allPaths.get(bestSeg.getID());
-        System.out.println("finding another path");
       }
       this.reCalcReset = 0;
     }
@@ -255,63 +229,19 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
     {
       this.model.setHighlighted(this.path);
     }
-    
+
     super.paint(g);
     
-    for(Point2D.Double iPoint : this.inertia)
-    {
-      Point2D screenIPoint = at.transform(iPoint, null);
-      
-      int radius1 = 4;
-      int diameter1 = radius1 * 2;
-      g2.setColor(Color.BLACK);
-      g2.fillOval((int)(screenIPoint.getX() - radius1), 
-          (int)(screenIPoint.getY() - radius1), diameter1, diameter1);
-    }
     if(this.intertiaReset == 0)
     {
       this.inertia.offer(modelPoint);
     }
-    this.intertiaReset = (this.intertiaReset + 1) % 6;
+    this.intertiaReset = (this.intertiaReset + 1) % 4;
     
-    if(this.inertia.size() > 2)
+    if(this.inertia.size() > 3)
     {
       this.inertia.poll();
     }
-    
-    bestSeg.highlighted = true;
-//    for(HashSet<StreetSegment> segs : surroundingSegs)
-//    {
-//      for(StreetSegment seg : segs)
-//      {
-//        seg.highlighted = true;
-//      }
-//    }
-//    super.paint(g);
-    
-//    for(HashSet<StreetSegment> segs : surroundingSegs)
-//    {
-//      for(StreetSegment seg : segs)
-//      {
-//        seg.highlighted = false;
-//      }
-//    }
-    bestSeg.highlighted = false;
-    
-    
-//    System.out.println("-------------------");
-//    System.out.println(minDistance);
-//    System.out.println(closestSegment);
-//    System.out.println(streets.get(closestSegment.getparentCanonicalName()));
-//    System.out.println("-------------------");
-    
-    Point2D screenPoint1 = at.transform(modelPoint, null);
-    
-    int radius1 = 4;
-    int diameter1 = radius1 * 2;
-    g2.setColor(Color.BLUE);
-    g2.fillOval((int)(screenPoint1.getX() - radius1), 
-        (int)(screenPoint1.getY() - radius1), diameter1, diameter1);
     
     if(newPoint != null)
     {
@@ -326,10 +256,5 @@ public class DynamicCartographyPanel<T> extends CartographyPanel<T>
     g2.setColor(Color.RED);
     g2.fillOval((int)(screenPoint.getX() - radius), 
         (int)(screenPoint.getY() - radius), diameter, diameter);
-    
-    for(Path2D.Double path : this.gridLines)
-    {
-      g2.draw(at.createTransformedShape(path));
-    }
   }
 }

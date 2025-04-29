@@ -3,8 +3,8 @@ package grid;
 import java.util.Objects;
 
 /**
- * 
- * @author offic
+ * Acts as a simple tuple class but in Java.
+ * @author Jerome Donfack
  *
  * @param <T>
  * @param <S>
@@ -43,8 +43,13 @@ public class GridTuple<T, S>
     return this.right;
   }
   
+  /**
+   * Checks if object in left and right it equal.
+   * If the objects are Double, there is a slight tolerance.
+   * @param obj - Object to compare to.
+   */
   @Override
-  public boolean equals(Object obj)
+  public boolean equals(final Object obj)
   {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
@@ -85,6 +90,9 @@ public class GridTuple<T, S>
     return true;
   }
   
+  /**
+   * Creates hash code, for Double, the hash code has a tolerance.
+   */
   @Override
   public int hashCode()
   {

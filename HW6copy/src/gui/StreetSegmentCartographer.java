@@ -59,25 +59,11 @@ public class StreetSegmentCartographer implements Cartographer<StreetSegment>
     while(streetsegs.hasNext())
     {
       StreetSegment streetseg = streetsegs.next();
-      if(streetseg.highlighted)
-      {
-        g2.setColor(theme.getHighlightTheme().getColor());
-        g2.setStroke(theme.getHighlightTheme().getStroke());
-        g2.draw(at.createTransformedShape(streetseg.getGeographicShape().getShape()));
-      }
-      else
-      {
-        String themeCode = "" + streetseg.getCode().charAt(0) 
-            + streetseg.getCode().charAt(1);
-        g2.setColor(theme.getTheme(themeCode).getColor());
-        g2.setStroke(theme.getTheme(themeCode).getStroke());
-        g2.draw(at.createTransformedShape(streetseg.getGeographicShape().getShape()));
-      }
-//      String themeCode = "" + streetseg.getCode().charAt(0) 
-//          + streetseg.getCode().charAt(1);
-//      g2.setColor(theme.getTheme(themeCode).getColor());
-//      g2.setStroke(theme.getTheme(themeCode).getStroke());
-//      g2.draw(at.createTransformedShape(streetseg.getGeographicShape().getShape()));
+      String themeCode = "" + streetseg.getCode().charAt(0) 
+          + streetseg.getCode().charAt(1);
+      g2.setColor(theme.getTheme(themeCode).getColor());
+      g2.setStroke(theme.getTheme(themeCode).getStroke());
+      g2.draw(at.createTransformedShape(streetseg.getGeographicShape().getShape()));
     }
   }
   
