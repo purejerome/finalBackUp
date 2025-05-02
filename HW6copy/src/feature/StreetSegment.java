@@ -162,14 +162,14 @@ public class StreetSegment extends AbstractFeature
     PathIterator pathIterator = ((PiecewiseLinearCurve) this.geoGraphicShape)
         .getShape().getPathIterator(null);
     double[] coords = new double[6];
-    Point2D.Double tailPoint = null;
+    Point2D.Double tailP = null;
     
     while (!pathIterator.isDone())
     {
       pathIterator.currentSegment(coords);
-      tailPoint = new Point2D.Double(coords[0], coords[1]);
+      tailP = new Point2D.Double(coords[0], coords[1]);
       pathIterator.next();
     }
-    this.tailPoint =  tailPoint;
+    this.tailPoint =  tailP;
   }
 }

@@ -37,6 +37,7 @@ public class StreetsReader
   /**
    * Reads street segment data, and returns mappable street segments.
    * @param streets - Storage for all streets.
+   * @param grid - Grid to initialize based on street segments read.
    * @return - The mappable street segments.
    * @throws IOException
    */
@@ -89,9 +90,6 @@ public class StreetsReader
     {
       seg.initHeadPoint();
       seg.initTailPoint();
-      
-//      seg.initHeadAngle();
-//      seg.initTailAngle();
     }
     
     grid.setBounds(bounds);

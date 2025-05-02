@@ -34,7 +34,8 @@ public abstract class AbstractShortestPathAlgorithm implements ShortestPathAlgor
    * @return - Path from origin node to desination node.
    */
   public abstract Map<String, StreetSegment> findPath(final int origin, 
-      final int destination, final StreetNetwork net, final Map<String, Map<String, StreetSegment>> allPaths);
+      final int destination, final StreetNetwork net, 
+      final Map<String, Map<String, StreetSegment>> allPaths);
   
   /**
    * Adds a street seg observer.

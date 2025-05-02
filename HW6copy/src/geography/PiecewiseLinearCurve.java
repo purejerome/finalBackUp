@@ -3,7 +3,6 @@ package geography;
 import java.awt.Shape;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
-import java.awt.geom.Point2D;
 
 /**
  * Class for piecewise curves to print on screen.

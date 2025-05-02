@@ -180,8 +180,6 @@ public class Grid
     double startX = bounds.getMinX();
     double startY = bounds.getMinY();
     
-//    double x = Math.floor((lon - startX) / (bounds.getMaxX() - startX) * 100);
-//    double y = Math.floor((lat - startY) / (bounds.getMaxY() - startY) * 100);
     for(StreetSegment seg : this.elementMap.values())
     {
       Point2D.Double headPoint = seg.getHeadPoint();
